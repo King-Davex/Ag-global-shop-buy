@@ -31,13 +31,19 @@ void dispose() {
   super.dispose();
 }
   bool _isInit = false;
+  // Debug mode: when true, disables Firestore writes to help reproduce rebuild/looping issues
+  bool _debugMode = true;
 
   @override
   Widget build(BuildContext context) {
+    // Debug print to observe build frequency
+    // Remove or set `_debugMode = false` when finished debugging
+    print('SettingsForm build - mounted=${mounted}');
    final user = Provider.of<UserModel>(context);
     return StreamBuilder<UserData>(
       stream: DatabaseService(uid:user.uid).userdatas,
       builder: (context, asyncSnapshot) {
+        print('SettingsForm StreamBuilder rebuild: hasData=${asyncSnapshot.hasData}');
         if(!asyncSnapshot.hasData){
           return Center(child: Loading(),);
         }
@@ -65,14 +71,22 @@ void dispose() {
                   setState(() {
                     _imageFile = file;
                   });
-                  // upload
-                  final url = await DatabaseService(uid: user.uid).uploadProfileImage(file);
-                  if (!mounted) return;
-                  if (url != null) {
-                    setState(() {
-                      _photoUrl = url;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image uploaded')));
+                  // upload (skip actual Firestore/Storage writes when debugging)
+                  if (!_debugMode) {
+                    final url = await DatabaseService(uid: user.uid).uploadProfileImage(file);
+                    if (!mounted) return;
+                    if (url != null) {
+                      setState(() {
+                        _photoUrl = url;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image uploaded')));
+                    }
+                  } else {
+                    // simulate a short delay as if uploading
+                    await Future.delayed(Duration(milliseconds: 200));
+                    if (!mounted) return;
+                    setState(() { _photoUrl = null; });
+                    print('Debug: skipped upload (debugMode=true)');
                   }
                 },
                 child: CircleAvatar(
@@ -106,7 +120,8 @@ void dispose() {
                 value: _isBuying,
                 onChanged: (val) async {
                   setState(() => _isBuying = val);
-                  await DatabaseService(uid: user.uid).updateProfileFields(isBuying: val);
+                  if (!_debugMode) await DatabaseService(uid: user.uid).updateProfileFields(isBuying: val);
+                  else print('Debug: skipped updateProfileFields(isBuying:$val)');
                 },
               ),
               DropdownButtonFormField(
@@ -140,18 +155,22 @@ void dispose() {
                 },
               ),
         
-             ElevatedButton(onPressed: (){
+             ElevatedButton(onPressed: () async {
               // Save all fields
-              DatabaseService(uid: user.uid).updatingUserData(
-                _nameController.text,
-                _curentSuger,
-                _currentStrength,
-              );
-              DatabaseService(uid: user.uid).updateProfileFields(
-                description: _descriptionController.text,
-                isBuying: _isBuying,
-                photoUrl: _photoUrl,
-              );
+              if (!_debugMode) {
+                await DatabaseService(uid: user.uid).updatingUserData(
+                  _nameController.text,
+                  _curentSuger,
+                  _currentStrength,
+                );
+                await DatabaseService(uid: user.uid).updateProfileFields(
+                  description: _descriptionController.text,
+                  isBuying: _isBuying,
+                  photoUrl: _photoUrl,
+                );
+              } else {
+                print('Debug: skipped saving updates (debugMode=true)');
+              }
               Navigator.pop(context);
              },
              style: ElevatedButton.styleFrom(
