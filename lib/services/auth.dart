@@ -58,8 +58,8 @@ class AuthServices {
         
 
         User? user = result.user;
-       await DatabaseService(uid: user?.uid).updatingUserData('New User', '0', 100);
-       
+       // Initialize user document without adding sugar/strength fields; set a default name and empty profile fields
+       await DatabaseService(uid: user?.uid).updateProfileFields(name: 'New User', description: '', isBuying: false);
         return _userFromFirebase(user);
       } on FirebaseAuthException catch (e) {
 

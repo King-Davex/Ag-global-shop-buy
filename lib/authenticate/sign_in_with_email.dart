@@ -31,7 +31,7 @@ class _SignInWithEmailState extends State<SignInWithEmail> {
   bool hidetext = true;
   @override
   Widget build(BuildContext context) {
-    return loading? Loading(): Scaffold(
+    return Scaffold(
       backgroundColor: Colors.brown.shade100,
       appBar: AppBar(
         backgroundColor: Colors.brown.shade400,
@@ -52,7 +52,9 @@ class _SignInWithEmailState extends State<SignInWithEmail> {
           ),
         ],
       ),
-      body: Padding(
+      body: Stack(
+        children: [
+          Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -102,6 +104,15 @@ class _SignInWithEmailState extends State<SignInWithEmail> {
             ),
           ],
         ),
+      ),
+          if (loading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black45,
+                child: Center(child: Loading()),
+              ),
+            ),
+        ],
       ),
     );
   }

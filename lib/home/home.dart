@@ -17,12 +17,16 @@ class _HomeState extends State<Home> {
   bottomsheet() {
     showModalBottomSheet(
       context: context,
-   
-      
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.symmetric(vertical: 20, horizontal: 60),
-          child: SettingsForm(),
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 60),
+              child: SettingsForm(),
+            ),
+          ),
         );
       },
     );
