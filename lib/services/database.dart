@@ -121,6 +121,7 @@ List<Brew> _brewListFromSnapshot(QuerySnapshot snapshot) {
       photoUrl: data['photoUrl'] as String?,
       description: data['description'] as String?,
       isBuying: data['isBuying'] as bool?,
+      uid: doc.id,
     );
   }).toList();
 }

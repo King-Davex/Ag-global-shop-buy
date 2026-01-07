@@ -69,7 +69,6 @@ class _BrewListState extends State<BrewList> {
             final displayPhoto = (photo != null && photo.isNotEmpty)
                 ? (photo.contains('?') ? '$photo&ts=${DateTime.now().millisecondsSinceEpoch}' : '$photo?ts=${DateTime.now().millisecondsSinceEpoch}')
                 : null;
-            final isBuying = userData.isBuying ?? false;
             final desc = userData.description ?? '';
             final name = userData.name ?? ''; 
 
@@ -158,56 +157,95 @@ class _BrewListState extends State<BrewList> {
         ),
 
         // Remaining list of brews (other users/items)
-        // If there are no brews, hide the list so the empty white card doesn't show.
-        if (brew.isEmpty)
-          SizedBox.shrink()
-        else
-          Expanded(
-            child: ListView.builder(
-              itemCount: brew.length,
-              itemBuilder: (context, index) {
-                final item = brew[index];
-                final strength = item.strenght ?? 400;
-                return Container(
-                  height: 110,
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    // Make the item container transparent (remove white card + shadow)
-                    color: Colors.transparent,
-                    image: item.photoUrl != null && (item.photoUrl ?? '').isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(item.photoUrl!),
-                            fit: BoxFit.cover,
-                            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.25), BlendMode.darken),
-                          )
-                        : null,
+        // Filter out the current user from the list
+        Builder(
+          builder: (context) {
+            // Filter out current user's brew from the list
+            final otherBrews = brew.where((b) => b.uid != null && b.uid != user.uid).toList();
+            
+            if (otherBrews.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    'No other users found',
+                    style: TextStyle(color: Colors.black54, fontSize: 16),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        children: [
-                          // Avatar — ensure the circle shows the image when present
-                          item.photoUrl != null && (item.photoUrl ?? '').isNotEmpty
-                              ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(item.photoUrl!))
-                              : CircleAvatar(radius: 30, backgroundColor: Colors.brown[strength]),
-                          SizedBox(width: 12),
-                          // Texts
-                          // Removed textual overlay (name/description) to avoid white text
-                          Expanded(
-                            child: SizedBox.shrink(),
-                          ),
-
-                        ],
+                ),
+              );
+            }
+            
+            return Expanded(
+              child: ListView.builder(
+                itemCount: otherBrews.length,
+                itemBuilder: (context, index) {
+                  final item = otherBrews[index];
+                  final strength = item.strenght ?? 400;
+                  final name = item.name ?? 'Unknown User';
+                  final description = item.description ?? '';
+                  
+                  return Container(
+                    height: 110,
+                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.brown.shade200,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            // Avatar — ensure the circle shows the image when present
+                            item.photoUrl != null && (item.photoUrl ?? '').isNotEmpty
+                                ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(item.photoUrl!))
+                                : CircleAvatar(radius: 30, backgroundColor: Colors.brown[strength], child: Icon(Icons.person, color: Colors.white)),
+                            SizedBox(width: 12),
+                            // Display name and description
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    description.isNotEmpty ? description : 'No description',
+                                    style: TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ],
     );
   }
